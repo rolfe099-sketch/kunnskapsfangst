@@ -54,6 +54,7 @@ export function KnowledgeLibrary() {
   const [valgtType, setValgtType] = useState<string | null>(null)
   const [detaljKort, setDetaljKort] = useState<Erfaringskort | null>(null)
   const [kopiert, setKopiert] = useState(false)
+  const [kopiFeil, setKopiFeil] = useState(false)
 
   useEffect(() => {
     setGodkjente(hentGodkjenteKort())
@@ -89,18 +90,24 @@ export function KnowledgeLibrary() {
     })
   }, [alleKort, søk, valgtType])
 
-  async function kopierDebriefAgenda() {
-    const linjer = [
+  function agendaTekst(): string {
+    return [
       'Foreslåtte tema til neste konsulentdebrief (fra kunnskapshull i LC-hjernen):',
       '',
       ...hull.map((h, i) => `${i + 1}. ${h.sporsmal}`),
-    ]
+    ].join('\n')
+  }
+
+  async function kopierDebriefAgenda() {
+    setKopiFeil(false)
     try {
-      await navigator.clipboard.writeText(linjer.join('\n'))
+      await navigator.clipboard.writeText(agendaTekst())
       setKopiert(true)
       setTimeout(() => setKopiert(false), 2000)
     } catch {
-      // Utklippstavle kan være blokkert – da skjer det bare ingenting.
+      // Nettleseren kan blokkere utklippstavlen. Å feile stille ville brutt
+      // med demoens eget prinsipp – vis teksten så den kan kopieres manuelt.
+      setKopiFeil(true)
     }
   }
 
@@ -260,6 +267,18 @@ export function KnowledgeLibrary() {
               </Button>
             ) : null}
           </div>
+
+          {kopiFeil ? (
+            <div className="rounded-lg border border-warning/40 bg-warning/10 p-4">
+              <p className="text-sm leading-relaxed text-foreground">
+                Nettleseren blokkerte utklippstavlen. Her er agendaen — merk teksten og
+                kopier den manuelt.
+              </p>
+              <pre className="mt-3 max-h-56 overflow-auto rounded-md border border-border bg-background p-3 text-xs leading-relaxed whitespace-pre-wrap text-foreground select-all">
+                {agendaTekst()}
+              </pre>
+            </div>
+          ) : null}
 
           {!lastet ? (
             <KortlisteSkeleton antall={2} />

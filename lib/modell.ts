@@ -22,7 +22,7 @@ export const MODELL_ID = process.env.AI_MODELL?.trim() || 'openai/gpt-4.1-mini'
 export const EMBEDDING_MODELL =
   process.env.EMBEDDING_MODELL?.trim() || 'openai/text-embedding-3-small'
 
-// Transkripsjonsmodell for lydinngang. Konsulenter i felt skriver ikke —
-// de snakker. Settes med TRANSKRIPSJON_MODELL.
+// Transkripsjonsmodell for lydinngang, slik at en erfaring kan tas opp muntlig
+// og redigeres etterpå. Settes med TRANSKRIPSJON_MODELL.
 export const TRANSKRIPSJON_MODELL =
   process.env.TRANSKRIPSJON_MODELL?.trim() || 'openai/whisper-1'

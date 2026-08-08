@@ -48,6 +48,7 @@ export function WeeklyDashboard() {
   const [godkjente, setGodkjente] = useState<Erfaringskort[]>([])
   const [hull, setHull] = useState<Kunnskapshull[]>([])
   const [kopiert, setKopiert] = useState(false)
+  const [kopiFeil, setKopiFeil] = useState(false)
 
   useEffect(() => {
     setGodkjente(hentGodkjenteKort())
@@ -67,21 +68,27 @@ export function WeeklyDashboard() {
   const [aktivUke, setAktivUke] = useState<number | null>(null)
   const vist = vekst[aktivUke ?? sisteIndeks] ?? vekst[sisteIndeks]
 
-  async function kopierAgenda() {
-    const linjer = [
+  function agendaTekst(): string {
+    return [
       'Agenda – ukentlig konsulentdebrief',
       '',
       'Kunnskapshull hjernen ikke kunne svare på:',
       ...hull.map((h, i) => `${i + 1}. ${h.sporsmal}`),
       '',
       'Har du en erfaring som dekker noe av dette, legg den inn denne uken.',
-    ]
+    ].join('\n')
+  }
+
+  async function kopierAgenda() {
+    setKopiFeil(false)
     try {
-      await navigator.clipboard.writeText(linjer.join('\n'))
+      await navigator.clipboard.writeText(agendaTekst())
       setKopiert(true)
       setTimeout(() => setKopiert(false), 2000)
     } catch {
-      // Utklippstavle kan være blokkert – da skjer det ingenting.
+      // Nettleseren kan blokkere utklippstavlen. Å feile stille ville brutt
+      // med demoens eget prinsipp – vis teksten så den kan kopieres manuelt.
+      setKopiFeil(true)
     }
   }
 
@@ -293,6 +300,18 @@ export function WeeklyDashboard() {
             </Button>
           ) : null}
         </div>
+
+        {kopiFeil ? (
+          <div className="rounded-lg border border-warning/40 bg-warning/10 p-4">
+            <p className="text-sm leading-relaxed text-foreground">
+              Nettleseren blokkerte utklippstavlen. Her er agendaen — merk teksten og
+              kopier den manuelt.
+            </p>
+            <pre className="mt-3 max-h-56 overflow-auto rounded-md border border-border bg-background p-3 text-xs leading-relaxed whitespace-pre-wrap text-foreground select-all">
+              {agendaTekst()}
+            </pre>
+          </div>
+        ) : null}
 
         {!lastet ? (
           <KortlisteSkeleton antall={2} />

@@ -147,7 +147,7 @@ export function VoiceCapture({ onTekst }: VoiceCaptureProps) {
           </span>
         ) : (
           <span className="text-xs text-muted-foreground">
-            Konsulenter i felt skriver ikke — de snakker.
+            Opptaket transkriberes og legges i notatfeltet, klart til redigering.
           </span>
         )}
       </div>
