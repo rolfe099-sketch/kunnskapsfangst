@@ -19,3 +19,5 @@ tsconfig.tsbuildinfo
 
 # Local tooling
 .claude/
+# Scan snapshots written by what-it-does. Local scratch, not shared state.
+.what-it-does/
