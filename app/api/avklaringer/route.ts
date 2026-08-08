@@ -60,7 +60,12 @@ export async function POST(req: Request) {
   } catch (err) {
     console.log('[v0] avklaringer-feil:', err instanceof Error ? err.message : err)
     return Response.json(
-      { feil: 'Klarte ikke å generere utdypingsspørsmål akkurat nå.' },
+      {
+        feil: 'Klarte ikke å generere utdypingsspørsmål akkurat nå.',
+        // MIDLERTIDIG diagnostikk – fjernes så snart modelloppsettet er verifisert.
+        diagnose: err instanceof Error ? err.message : String(err),
+        modell: MODELL_ID,
+      },
       { status: 500 },
     )
   }
