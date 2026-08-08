@@ -60,18 +60,22 @@ kort og gjorde svarene vage. Finner søket ingenting relevant, kalles ikke
 svarmodellen i det hele tatt: vi vet allerede at grunnlaget mangler, og å la
 modellen «prøve» ville vært å invitere til gjetting.
 
-Modellen settes med miljøvariabelen `AI_MODELL` (se `lib/modell.ts`), slik at den
-kan byttes uten kodeendring. Standard er `openai/gpt-4.1-mini`, som er verifisert
-tilgjengelig på AI Gateway sitt gratisnivå. Claude-modellene er verifisert
-utilgjengelige der — gatewayen svarer «Free tier users do not have access to this
-model» — og krever betalte AI Gateway-kreditter. Med kreditter på plass er Claude
-ett miljøvariabel-bytte unna:
+Modellene settes med miljøvariabler (se `lib/modell.ts`), slik at de kan byttes
+uten kodeendring. Ulike oppgaver får ulikt verktøy — Anthropic tilbyr ikke
+embeddings, så søket bruker en annen leverandør enn svarene:
 
-```
-AI_MODELL=anthropic/claude-sonnet-4.5
-```
+| Rolle | Variabel | Kjører i produksjon |
+| --- | --- | --- |
+| Spørsmål, strukturering og svar | `AI_MODELL` | `anthropic/claude-sonnet-4.5` |
+| Likhetssøk | `EMBEDDING_MODELL` | `openai/text-embedding-3-small` |
+| Transkripsjon | `TRANSKRIPSJON_MODELL` | `openai/whisper-1` |
 
-Feiler modellkallet uansett grunn, later demoen aldri som: den viser enten en
+Aktive modeller vises på **Om løsningen**-siden. Kodestandarden er
+`openai/gpt-4.1-mini`, slik at prosjektet også kjører for den som ikke har
+betalte AI Gateway-kreditter — gratisnivået gir ikke tilgang til Claude-modellene
+og struper dessuten forespørslene.
+
+Feiler et modellkall uansett grunn, later demoen aldri som: den viser enten en
 ærlig feilmelding eller tydelig merket reserveinnhold.
 
 Feiler et modellkall, later ikke demoen som noe: eget innhold gir en ærlig
