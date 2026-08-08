@@ -1,5 +1,6 @@
 import { generateText } from 'ai'
-import { MODELL_ID, SYSTEMPROMPT_STRUKTUR, type KortUtenId } from '@/lib/data'
+import { SYSTEMPROMPT_STRUKTUR, type KortUtenId } from '@/lib/data'
+import { MODELL_ID } from '@/lib/modell'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 export const maxDuration = 30

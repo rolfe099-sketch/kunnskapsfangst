@@ -40,11 +40,25 @@ noe selskap.**
 ## Arkitektur
 
 Next.js (App Router), skisset i v0 og videreutviklet med Claude Code. Tre
-server-ruter kaller Claude (Sonnet 4.5) via Vercel AI SDK / AI Gateway: én
-genererer utdypingsspørsmål fra notatet, én strukturerer notatet til JSON (med
-defensiv parsing), én svarer strømmende på spørsmål med de godkjente kortene som
-eneste kontekst. Enkel rate-limiting per IP. Godkjente kort og kunnskapshull
-persisteres i nettleseren (localStorage) — ingen database ennå, med vilje.
+server-ruter kaller en språkmodell via Vercel AI SDK / AI Gateway: én genererer
+utdypingsspørsmål fra notatet, én strukturerer notatet til JSON (med defensiv
+parsing), én svarer strømmende på spørsmål med de godkjente kortene som eneste
+kontekst. Enkel rate-limiting per IP. Godkjente kort og kunnskapshull persisteres
+i nettleseren (localStorage) — ingen database ennå, med vilje.
+
+Modellen settes med miljøvariabelen `AI_MODELL` (se `lib/modell.ts`), slik at den
+kan byttes uten kodeendring. Standard er `openai/gpt-4.1-mini`, som er verifisert
+tilgjengelig på AI Gateway sitt gratisnivå. Claude-modellene er verifisert
+utilgjengelige der — gatewayen svarer «Free tier users do not have access to this
+model» — og krever betalte AI Gateway-kreditter. Med kreditter på plass er Claude
+ett miljøvariabel-bytte unna:
+
+```
+AI_MODELL=anthropic/claude-sonnet-4.5
+```
+
+Feiler modellkallet uansett grunn, later demoen aldri som: den viser enten en
+ærlig feilmelding eller tydelig merket reserveinnhold.
 
 Feiler et modellkall, later ikke demoen som noe: eget innhold gir en ærlig
 feilmelding med mulighet for nytt forsøk, og kun det uendrede eksempelet kan falle

@@ -1,7 +1,4 @@
-// Modell-ID brukt av alle API-rutene (Vercel AI Gateway-format).
-// Claude Sonnet 4.5 — god balanse mellom kvalitet, hastighet og kostnad for demoen.
-// ('anthropic/claude-opus-5' finnes i gatewayen om maks kvalitet trengs.)
-export const MODELL_ID = 'anthropic/claude-sonnet-4.5'
+// Modellvalget ligger i lib/modell.ts (kun server).
 
 export type Kilde = {
   /** Type kilde, f.eks. «Ukentlig konsulentdebrief». Valgfri. */

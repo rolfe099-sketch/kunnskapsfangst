@@ -1,5 +1,6 @@
 import { generateText } from 'ai'
-import { MODELL_ID, SYSTEMPROMPT_AVKLARINGER } from '@/lib/data'
+import { SYSTEMPROMPT_AVKLARINGER } from '@/lib/data'
+import { MODELL_ID } from '@/lib/modell'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 export const maxDuration = 30
@@ -60,12 +61,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.log('[v0] avklaringer-feil:', err instanceof Error ? err.message : err)
     return Response.json(
-      {
-        feil: 'Klarte ikke å generere utdypingsspørsmål akkurat nå.',
-        // MIDLERTIDIG diagnostikk – fjernes så snart modelloppsettet er verifisert.
-        diagnose: err instanceof Error ? err.message : String(err),
-        modell: MODELL_ID,
-      },
+      { feil: 'Klarte ikke å generere utdypingsspørsmål akkurat nå.' },
       { status: 500 },
     )
   }
