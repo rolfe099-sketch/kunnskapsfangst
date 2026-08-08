@@ -1,0 +1,33 @@
+# What it does — pull request check
+#
+# Scans the base branch and this one, then comments with what changed about
+# the application's behaviour: which endpoints exist, what data each touches,
+# and whether a check on who is asking disappeared.
+#
+# This repository is public, so the check is free and needs no licence key.
+
+name: what it does
+on:
+  pull_request:
+    paths:
+      - '**.ts'
+      - '**.tsx'
+      - '**.js'
+      - '**.jsx'
+      - '**.mjs'
+
+jobs:
+  behaviour:
+    runs-on: ubuntu-latest
+
+    # Read the code, write the comment. Nothing else.
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: rolfe099-sketch/what-it-does/action@v1
+        with:
+          # Off to begin with. Turn it on once the comments have earned trust —
+          # a check that breaks the build on day one gets removed on day one.
+          fail-on-new: false
