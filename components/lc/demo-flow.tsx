@@ -375,6 +375,10 @@ export function DemoFlow() {
         sporsmal === DEMO_SPORSMAL_STOTTET || sporsmal === DEMO_SPORSMAL_UDEKKET
       if (kjentEksempel) {
         // Forhåndsskrevet reservesvar for eksempelspørsmålene – merkes i UI.
+        // Teksten er skrevet med [Kort 1] = det nettopp godkjente kortet, så
+        // siteringene må peke inn i hele basen, ikke i søkets utvalg.
+        // Ellers viser kildeboksen et annet kort enn svaret beskriver.
+        setKontekstKort(kunnskapsbase)
         tekst = fallbackSvar(sporsmal)
         setSvar(tekst)
         setSvarErReserve(true)
