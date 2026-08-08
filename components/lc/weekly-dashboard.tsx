@@ -4,6 +4,12 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Check, Copy, Lightbulb, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  DiagramSkeleton,
+  KortlisteSkeleton,
+  ListeSkeleton,
+  StatRadSkeleton,
+} from '@/components/lc/skeletons'
 import type { Erfaringskort } from '@/lib/data'
 import { SEED_KORT } from '@/lib/seed-kort'
 import { hentGodkjenteKort, hentKunnskapshull, type Kunnskapshull } from '@/lib/lager'
@@ -90,28 +96,32 @@ export function WeeklyDashboard() {
       </div>
 
       {/* Nøkkeltall */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatRute
-          merkelapp="Erfaringer totalt"
-          verdi={lastet ? alleKort.length : SEED_KORT.length}
-          bunntekst="godkjent og søkbart"
-        />
-        <StatRute
-          merkelapp="Nye denne uken"
-          verdi={lastet ? nye : 0}
-          bunntekst="lagt inn siden mandag"
-        />
-        <StatRute
-          merkelapp="Bidragsytere"
-          verdi={lastet ? folk.length : 0}
-          bunntekst="konsulenter med erfaringer inne"
-        />
-        <StatRute
-          merkelapp="Åpne kunnskapshull"
-          verdi={lastet ? hull.length : 0}
-          bunntekst="spørsmål uten dekning"
-        />
-      </div>
+      {!lastet ? (
+        <StatRadSkeleton />
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <StatRute
+            merkelapp="Erfaringer totalt"
+            verdi={alleKort.length}
+            bunntekst="godkjent og søkbart"
+          />
+          <StatRute
+            merkelapp="Nye denne uken"
+            verdi={nye}
+            bunntekst={nye === 0 ? 'ingen ennå denne uken' : 'lagt inn siden mandag'}
+          />
+          <StatRute
+            merkelapp="Bidragsytere"
+            verdi={folk.length}
+            bunntekst="konsulenter med erfaringer inne"
+          />
+          <StatRute
+            merkelapp="Åpne kunnskapshull"
+            verdi={hull.length}
+            bunntekst={hull.length === 0 ? 'alt er dekket så langt' : 'spørsmål uten dekning'}
+          />
+        </div>
+      )}
 
       {/* Vekst over tid */}
       <section className="space-y-3">
@@ -124,6 +134,9 @@ export function WeeklyDashboard() {
           </p>
         </div>
 
+        {!lastet ? (
+          <DiagramSkeleton />
+        ) : (
         <div className="rounded-xl border border-border bg-card p-5">
           {/* Avlesning i stedet for flytende tooltip: den kan ikke gå ut over
               sidebredden, og den virker med tastatur og berøring. */}
@@ -215,6 +228,7 @@ export function WeeklyDashboard() {
             </tbody>
           </table>
         </div>
+        )}
       </section>
 
       {/* Bidragsytere */}
@@ -224,8 +238,10 @@ export function WeeklyDashboard() {
           <h2 className="text-base font-semibold text-foreground">Hvem har bidratt</h2>
         </div>
 
-        {folk.length === 0 ? (
-          <p className="rounded-lg border border-border bg-muted/40 px-4 py-5 text-center text-sm text-muted-foreground">
+        {!lastet ? (
+          <ListeSkeleton />
+        ) : folk.length === 0 ? (
+          <p className="rounded-lg border border-border bg-muted/40 px-4 py-8 text-center text-sm text-muted-foreground">
             Ingen bidragsytere registrert ennå.
           </p>
         ) : (
@@ -278,10 +294,12 @@ export function WeeklyDashboard() {
           ) : null}
         </div>
 
-        {!lastet || hull.length === 0 ? (
-          <div className="rounded-xl border border-border bg-muted/40 px-4 py-5 text-center text-sm text-muted-foreground">
-            <p>Ingen åpne kunnskapshull.</p>
-            <p className="mt-1">
+        {!lastet ? (
+          <KortlisteSkeleton antall={2} />
+        ) : hull.length === 0 ? (
+          <div className="rounded-xl border border-border bg-muted/40 px-4 py-8 text-center text-sm text-muted-foreground">
+            <p className="font-medium text-foreground">Ingen åpne kunnskapshull</p>
+            <p className="mx-auto mt-1.5 max-w-sm leading-relaxed">
               Still et spørsmål basen ikke dekker i{' '}
               <Link
                 href="/"

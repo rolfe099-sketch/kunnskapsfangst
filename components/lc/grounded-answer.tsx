@@ -1,6 +1,7 @@
 'use client'
 
 import { ArrowUpRight } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 import type { Erfaringskort } from '@/lib/data'
 import { kildeLinje } from '@/lib/data'
 
@@ -59,16 +60,30 @@ function siterteNumre(tekst: string): number[] {
 
 export function GroundedAnswer({ svar, kort, onÅpneErfaring, strømmer }: GroundedAnswerProps) {
   const numre = siterteNumre(svar).filter((n) => kort[n - 1])
+  // Mellom at søket er ferdig og første token kommer, er svaret tomt. En tom
+  // ramme med markør ser ut som en feil – vis at noe er på vei.
+  const venterPåFørsteToken = strømmer && svar.trim().length === 0
 
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-border bg-card p-5">
-        <p className="text-sm leading-relaxed text-foreground">
-          {renderMedSitat(svar)}
-          {strømmer ? (
-            <span className="ml-0.5 inline-block h-4 w-1.5 translate-y-0.5 bg-primary/60" aria-hidden="true" />
-          ) : null}
-        </p>
+        {venterPåFørsteToken ? (
+          <div aria-live="polite" aria-label="Skriver svar">
+            <Skeleton className="h-3.5 w-full" />
+            <Skeleton className="mt-2 h-3.5 w-11/12" />
+            <Skeleton className="mt-2 h-3.5 w-3/5" />
+          </div>
+        ) : (
+          <p className="text-sm leading-relaxed text-foreground">
+            {renderMedSitat(svar)}
+            {strømmer ? (
+              <span
+                className="ml-0.5 inline-block h-4 w-1.5 translate-y-0.5 bg-primary/60"
+                aria-hidden="true"
+              />
+            ) : null}
+          </p>
+        )}
       </div>
 
       {!strømmer && numre.length > 0 ? (

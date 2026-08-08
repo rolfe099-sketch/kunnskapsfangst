@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ExperienceDetailSheet } from '@/components/lc/experience-detail-sheet'
+import { KortlisteSkeleton, TellerSkeleton } from '@/components/lc/skeletons'
 import { kildeLinje, type Erfaringskort } from '@/lib/data'
 import { SEED_KORT } from '@/lib/seed-kort'
 import {
@@ -122,11 +123,11 @@ export function KnowledgeLibrary() {
         <TabsList>
           <TabsTrigger value="kort" className="px-3">
             <BookOpen className="size-3.5" aria-hidden="true" />
-            Erfaringskort ({lastet ? alleKort.length : SEED_KORT.length})
+            Erfaringskort {lastet ? `(${alleKort.length})` : <TellerSkeleton />}
           </TabsTrigger>
           <TabsTrigger value="hull" className="px-3">
             <Lightbulb className="size-3.5" aria-hidden="true" />
-            Kunnskapshull ({lastet ? hull.length : 0})
+            Kunnskapshull {lastet ? `(${hull.length})` : <TellerSkeleton />}
           </TabsTrigger>
         </TabsList>
 
@@ -167,10 +168,33 @@ export function KnowledgeLibrary() {
             </div>
           </div>
 
-          {filtrerte.length === 0 ? (
-            <p className="rounded-lg border border-border bg-muted/40 px-4 py-6 text-center text-sm text-muted-foreground">
-              Ingen erfaringer matcher søket.
-            </p>
+          {!lastet ? (
+            <KortlisteSkeleton />
+          ) : filtrerte.length === 0 ? (
+            <div className="rounded-lg border border-border bg-muted/40 px-4 py-8 text-center">
+              <p className="text-sm text-muted-foreground">
+                Ingen erfaringer matcher{' '}
+                {søk.trim() ? (
+                  <>
+                    «<span className="text-foreground">{søk.trim()}</span>»
+                  </>
+                ) : (
+                  'filteret'
+                )}
+                {valgtType ? ` i ${valgtType}` : ''}.
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-3"
+                onClick={() => {
+                  setSøk('')
+                  setValgtType(null)
+                }}
+              >
+                Nullstill søk og filter
+              </Button>
+            </div>
           ) : (
             <ul className="space-y-3">
               {filtrerte.map((kort) => (
@@ -237,10 +261,12 @@ export function KnowledgeLibrary() {
             ) : null}
           </div>
 
-          {!lastet || hull.length === 0 ? (
-            <div className="rounded-lg border border-border bg-muted/40 px-4 py-6 text-center text-sm text-muted-foreground">
-              <p>Ingen kunnskapshull ennå.</p>
-              <p className="mt-1">
+          {!lastet ? (
+            <KortlisteSkeleton antall={2} />
+          ) : hull.length === 0 ? (
+            <div className="rounded-lg border border-border bg-muted/40 px-4 py-8 text-center text-sm text-muted-foreground">
+              <p className="font-medium text-foreground">Ingen kunnskapshull ennå</p>
+              <p className="mx-auto mt-1.5 max-w-sm leading-relaxed">
                 Still et spørsmål basen ikke dekker i{' '}
                 <Link
                   href="/"
@@ -248,7 +274,7 @@ export function KnowledgeLibrary() {
                 >
                   demoen
                 </Link>
-                , så dukker det opp her.
+                , så havner det her — klart til neste ukes debrief.
               </p>
             </div>
           ) : (
