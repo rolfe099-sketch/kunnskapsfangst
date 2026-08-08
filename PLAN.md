@@ -32,10 +32,9 @@ Hvert tiltak under er merket med hvilken del av annonsen det svarer på.
 6. ✅ **Modellgenererte utdypingsspørsmål**: ny rute /api/avklaringer genererer
    2–3 spørsmål fra egne notater; eksempelnotatet bruker de forhåndsskrevne, og
    feil gir ærlig merkede standardspørsmål.
-7. **Ekte retrieval (RAG)**: embeddings per kort + likhetssøk ved spørsmål.
-   Vis åpent i UI *hvilke* kort som ble hentet og hvorfor (score). Behold
-   [Kort N]-siteringer.
-   → Viser at du kan RAG i praksis, ikke bare si ordet.
+7. ✅ **Ekte retrieval (RAG)**: /api/hent embedder kortene og spørsmålet,
+   rangerer med cosinuslikhet og viser åpent i UI hvilke kort som ble hentet,
+   med score — og hvilke som ble forkastet. [Kort N] peker inn i utvalget.
 8. ✅ **Rikere seed-innhold**: 16 fiktive erfaringskort om taktplanlegging,
    buffere, Last Planner, PPU, hindringslogg, logistikk, sluttfase m.m.
    (lib/seed-kort.ts).
@@ -48,30 +47,26 @@ Hvert tiltak under er merket med hvilken del av annonsen det svarer på.
 10. **Ukentlig debrief-visning**: «Denne uken»-dashboard — hvem har levert, nye
     kort, basens vekst over tid, hull som ble tettet.
     → Annonsen: «MATER LC-HJERNEN».
-11. **Sikkerhetslag som synes**: automatisk deteksjon av person-, kunde- og
-    prosjektnavn i notatet, med visuell maskering («Entreprenør A», «Person 1»)
-    som konsulenten godkjenner *før* noe sendes til modellen. Klassifisering per
-    kort (intern/konfidensiell) og enkel endringslogg.
-    → Annonsen: «VOKTER SIKKERHETEN» / «SIKKERHET I RYGGMARGEN». I dag er dette
-    bare tekst i README — å *vise* det er langt sterkere.
-12. **Lyd som inngang**: les inn notatet muntlig, transkriber (Whisper via
-    gateway eller nettleser-API), og send til samme flyt. Konsulenter i felt
-    skriver ikke — de snakker. Stor wow-faktor på 30 sekunder i en demo.
+11. ✅ **Sikkerhetslag som synes**: lokal deteksjon av person-, firma- og
+    prosjektnavn med maskering («Entreprenør A», «Person 1») som konsulenten
+    godkjenner *før* noe sendes til modellen (lib/maskering.ts).
+    Klassifisering per kort og endringslogg gjenstår.
+12. ✅ **Lyd som inngang**: opptak i nettleseren, transkribert via /api/transkriber
+    og inn i samme flyt — inkludert maskeringssteget.
 
 ## Fase 3 — Presentasjonspolish
 
-13. **«Om løsningen»-side**: arkitekturskisse, modellvalg og hvorfor, hva som
-    bevisst er utelatt og hva som måtte på plass før ekte kundedata. (Flytt og
-    utvid README-innholdet inn i selve produktet.)
+13. ✅ **«Om løsningen»-side**: /om med flyten som sløyfe, prinsipper, teknisk
+    oppsett, sikkerhet og bevisste avgrensninger.
 14. **Demo-manus**: en 5-minutters løype du kan kjøre i intervjuet — inkl. hva du
     sier når noe feiler (ærlighetsprinsippet er et poeng, ikke en risiko).
 15. Gjennomgang av mobil, lastetilstander, tomtilstander, feilhåndtering.
 
-## Prioritering hvis tiden er knapp
+## Status
 
-Kjør i denne rekkefølgen: **0 → 6 → 8 → 5 → 9 → 11 → 7 → 10 → 12 → 13**.
-Fase 0 + punkt 6, 8, 5 og 9 alene gir en demo som føles som et produkt med en
-selvforbedrende sløyfe — det er kjernen i «LC-hjernen» slik annonsen beskriver den.
+Gjort: 1, 4, 5, 6, 7 (RAG), 8, 9, 11, 12, 13.
+Gjenstår: delt database (2), Claude-modell når kreditter er på plass,
+ukentlig debrief-dashboard (10), demo-manus (14), sluttgjennomgang (15).
 
 ## Det som IKKE skal bygges (og hvorfor det er et poeng)
 
