@@ -37,6 +37,9 @@ export type Erfaringskort = {
   originalNotat?: string
   /** Utdypende spørsmål/svar som lå til grunn for struktureringen. */
   avklaringer?: Avklaring[]
+  /** ISO-tidspunkt for når kortet ble godkjent og lagt i basen. Seed-kortene
+   *  mangler den og bruker datoen i kilden i stedet. */
+  registrert?: string
 }
 
 // Kortet slik modellen returnerer det (uten klient-generert id).

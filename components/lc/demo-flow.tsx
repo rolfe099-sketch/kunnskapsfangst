@@ -274,6 +274,7 @@ export function DemoFlow() {
       // hjemme i en delt base, heller ikke i kildesporet.
       originalNotat: maskertNotat() || DEMO_NOTAT,
       avklaringer: gjeldendeAvklaringer(),
+      registrert: new Date().toISOString(),
     }
     setGodkjentKort(nyttKort)
     setKunnskapsbase([nyttKort, ...SEED_KORT])
