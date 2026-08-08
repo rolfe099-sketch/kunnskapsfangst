@@ -60,14 +60,17 @@ Hvert tiltak under er merket med hvilken del av annonsen det svarer på.
 14. ✅ **Demo-manus**: skrevet, men ligger bevisst utenfor repoet — de som
     vurderer søknaden leser koden, og interne notater om hva man skal si i et
     intervju hører ikke hjemme der.
-15. Gjennomgang av mobil, lastetilstander, tomtilstander, feilhåndtering.
+15. ✅ **Gjennomgang av mobil, laste- og tomtilstander**: delte skjeletter,
+    ekte Suspense-fallback på biblioteket, tomtilstander som sier hva som skal
+    til, skjelett mens svaret venter på første token, og egen 404-side.
+    Mobil verifisert uten horisontal scroll på alle sidene.
 
 ## Status
 
-Gjort: 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14.
+Gjort: 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15.
 Claude kjører i produksjon (`AI_MODELL`), og alle rutene er verifisert der.
-Gjenstår: delt database med tilgangsstyring (2), og en siste gjennomgang av
-lastetilstander og feilhåndtering (15).
+Gjenstår: delt database med tilgangsstyring og roller (2) — bevisst utsatt, og
+dokumentert som avgrensning på Om-siden.
 
 ## Det som IKKE skal bygges (og hvorfor det er et poeng)
 
