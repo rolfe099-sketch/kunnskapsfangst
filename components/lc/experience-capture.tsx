@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { VoiceCapture } from '@/components/lc/voice-capture'
 
 export type CaptureFelter = {
   konsulent: string
@@ -95,6 +96,13 @@ export function ExperienceCapture({
           rows={5}
           placeholder="Skriv fritt om noe som fungerte, gikk galt, eller som du løste på en ny måte…"
           className="resize-none leading-relaxed"
+        />
+        <VoiceCapture
+          onTekst={(tekst) =>
+            onEndre({
+              notat: verdier.notat.trim() ? `${verdier.notat.trim()} ${tekst}` : tekst,
+            })
+          }
         />
       </div>
 
