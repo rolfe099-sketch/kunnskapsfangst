@@ -44,9 +44,8 @@ Hvert tiltak under er merket med hvilken del av annonsen det svarer på.
 9. ✅ **Kunnskapshull-sløyfen**: udekkede spørsmål logges som kunnskapshull,
    vises i egen fane i biblioteket og kan kopieres som debrief-agenda.
    (Kan senere kobles til en ekte ukentlig flyt.)
-10. **Ukentlig debrief-visning**: «Denne uken»-dashboard — hvem har levert, nye
-    kort, basens vekst over tid, hull som ble tettet.
-    → Annonsen: «MATER LC-HJERNEN».
+10. ✅ **Ukentlig debrief-visning**: /uke med nøkkeltall, tilvekst per uke,
+    bidragsytere og kunnskapshullene som kopierbar debrief-agenda.
 11. ✅ **Sikkerhetslag som synes**: lokal deteksjon av person-, firma- og
     prosjektnavn med maskering («Entreprenør A», «Person 1») som konsulenten
     godkjenner *før* noe sendes til modellen (lib/maskering.ts).
@@ -58,15 +57,17 @@ Hvert tiltak under er merket med hvilken del av annonsen det svarer på.
 
 13. ✅ **«Om løsningen»-side**: /om med flyten som sløyfe, prinsipper, teknisk
     oppsett, sikkerhet og bevisste avgrensninger.
-14. **Demo-manus**: en 5-minutters løype du kan kjøre i intervjuet — inkl. hva du
-    sier når noe feiler (ærlighetsprinsippet er et poeng, ikke en risiko).
+14. ✅ **Demo-manus**: skrevet, men ligger bevisst utenfor repoet — de som
+    vurderer søknaden leser koden, og interne notater om hva man skal si i et
+    intervju hører ikke hjemme der.
 15. Gjennomgang av mobil, lastetilstander, tomtilstander, feilhåndtering.
 
 ## Status
 
-Gjort: 1, 4, 5, 6, 7 (RAG), 8, 9, 11, 12, 13.
-Gjenstår: delt database (2), Claude-modell når kreditter er på plass,
-ukentlig debrief-dashboard (10), demo-manus (14), sluttgjennomgang (15).
+Gjort: 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14.
+Claude kjører i produksjon (`AI_MODELL`), og alle rutene er verifisert der.
+Gjenstår: delt database med tilgangsstyring (2), og en siste gjennomgang av
+lastetilstander og feilhåndtering (15).
 
 ## Det som IKKE skal bygges (og hvorfor det er et poeng)
 
