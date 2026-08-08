@@ -1,8 +1,7 @@
-// Modell-ID brukt av begge API-rutene (Vercel AI Gateway-format).
-// Tips: vurder å bytte til en Claude-modell (f.eks. 'anthropic/claude-haiku-4.5')
-// siden Lean Communications bruker Claude daglig — men verifiser nøyaktig ID i
-// v0/AI Gateway først, og test i prod etterpå.
-export const MODELL_ID = 'openai/gpt-4.1-mini'
+// Modell-ID brukt av alle API-rutene (Vercel AI Gateway-format).
+// Claude Sonnet 4.5 — god balanse mellom kvalitet, hastighet og kostnad for demoen.
+// ('anthropic/claude-opus-5' finnes i gatewayen om maks kvalitet trengs.)
+export const MODELL_ID = 'anthropic/claude-sonnet-4.5'
 
 export type Kilde = {
   /** Type kilde, f.eks. «Ukentlig konsulentdebrief». Valgfri. */
@@ -14,6 +13,13 @@ export type Kilde = {
 export type Avklaring = {
   sporsmal: string
   svar: string
+}
+
+/** Et utdypingsspørsmål slik det vises i steg 1. Eksempelsvar finnes kun for
+ *  det scriptede eksempelnotatet. */
+export type AvklaringSpm = {
+  sporsmal: string
+  eksempelSvar?: string
 }
 
 export type Erfaringskort = {
@@ -68,6 +74,13 @@ export const DEMO_AVKLARINGER: Avklaring[] = [
   },
 ]
 
+// Generiske utdypingsspørsmål. Brukes som ærlig merket reserve når modellen
+// ikke klarer å generere skreddersydde spørsmål fra et eget notat.
+export const GENERISKE_AVKLARINGER: AvklaringSpm[] = [
+  { sporsmal: 'Hva gjorde dere helt konkret, og hvem var involvert?' },
+  { sporsmal: 'Hvordan merket dere at tiltaket virket – eller ikke virket?' },
+]
+
 // Fast, polert forslag som brukes som stabil fallback hvis modellkallet feiler.
 export const FALLBACK_FORSLAG: KortUtenId = {
   tittel: 'Sonebasert avklaring i morgenmøtet reduserte stopp mellom fag',
@@ -93,48 +106,8 @@ export const FALLBACK_FORSLAG: KortUtenId = {
   kilde: { type: 'Ukentlig konsulentdebrief', navn: DEMO_KONSULENT, dato: '20. juli 2026' },
 }
 
-// To ekstra, enkle og tydelig fiktive erfaringer så kunnskapsgrunnlaget føles
-// gjenbrukbart. Brukes kun som støttekunnskap og kildeeksempler.
-export const SEED_KORT: Erfaringskort[] = [
-  {
-    id: 'seed-tegningsbehov',
-    tittel: 'Tidlig avklaring av tegningsbehov før oppstart i sone',
-    prosjekttype: 'Næringsbygg',
-    tags: ['tegninger', 'planlegging', 'oppstart'],
-    situasjon:
-      'Prosjekt der arbeidet startet i en ny sone før alt nødvendig tegningsunderlag var avklart.',
-    problem:
-      'Fag oppdaget manglende eller uklare tegninger først etter oppstart, noe som ga stopp og omarbeid.',
-    tiltak:
-      'Innførte en kort tegningsgjennomgang per sone i uken før oppstart, der hvert fag bekreftet at underlaget var komplett.',
-    observertEffekt:
-      'Færre avbrudd tidlig i sonen og mindre omarbeid knyttet til uavklart underlag.',
-    relevantNaar:
-      'Arbeidet planlegges sone for sone og er avhengig av at tegningsunderlaget er avklart før oppstart.',
-    forbehold:
-      'Fiktivt eksempel uten dokumenterte måltall. Omfanget av gjennomgangen må tilpasses prosjektets størrelse.',
-    kilde: { type: 'Ukentlig konsulentdebrief', navn: 'Anders Holm', dato: '13. juni 2026' },
-  },
-  {
-    id: 'seed-beslutningseier',
-    tittel: 'Kortere beslutningstid gjennom tydelig agenda og beslutningseier',
-    prosjekttype: 'Rehabiliteringsprosjekt',
-    tags: ['møteledelse', 'beslutninger', 'agenda'],
-    situasjon:
-      'Prosjektmøter der beslutninger ofte ble utsatt fordi det var uklart hvem som eide dem.',
-    problem:
-      'Saker ble diskutert uten å lande, og de samme temaene kom opp igjen uke etter uke.',
-    tiltak:
-      'Innførte en fast agenda med tydelig beslutningseier og frist per sak, og skilte diskusjonssaker fra beslutningssaker.',
-    observertEffekt:
-      'Beslutninger ble tatt raskere, og færre saker ble gjentatt i påfølgende møter.',
-    relevantNaar:
-      'Faste prosjektmøter der beslutninger drar ut og ansvaret for å lande dem er uklart.',
-    forbehold:
-      'Fiktivt eksempel. Effekten avhenger av at beslutningseier faktisk har mandat til å beslutte.',
-    kilde: { type: 'Ukentlig konsulentdebrief', navn: 'Ingrid Aas', dato: '27. juni 2026' },
-  },
-]
+// Seed-erfaringene (fiktiv «basiskunnskap» om takt, Lean og flyt) ligger i
+// lib/seed-kort.ts.
 
 // Fast setning som markerer at kunnskapsgrunnlaget ikke dekker spørsmålet.
 export const INGEN_DEKNING_PREFIX = 'Kunnskapsgrunnlaget dekker ikke dette.'
@@ -153,6 +126,17 @@ export const FALLBACK_SVAR_UDEKKET = `${INGEN_DEKNING_PREFIX} De godkjente erfar
 
 // Generisk, trygg avvisning for fritt innskrevne spørsmål vi ikke kan dekke.
 export const FALLBACK_SVAR_GENERISK = `${INGEN_DEKNING_PREFIX} De godkjente erfaringene i demoen dekker ikke dette spørsmålet, så jeg gir ikke et kildebasert svar.`
+
+export const SYSTEMPROMPT_AVKLARINGER = `Du er en fagassistent for byggekonsulenter som jobber med Lean og taktplanlegging. Du får et kort, ustrukturert notat med en erfaring fra et byggeprosjekt. Din oppgave er å stille 2-3 korte utdypingsspørsmål som gjør erfaringen konkret nok til at andre konsulenter kan gjenbruke den.
+
+Gode utdypingsspørsmål:
+- spør etter hva som konkret ble gjort (ikke bare at «noe ble endret»)
+- spør etter hvordan effekten ble observert
+- spør etter kontekst som avgjør om erfaringen er overførbar (prosjekttype, fag, fase)
+- kan besvares kort av personen som skrev notatet
+
+Svar KUN med gyldig JSON (ingen forklaring, ingen markdown-fences): en liste med 2-3 spørsmål som strenger, på norsk bokmål. Eksempel:
+["Hva endret dere konkret i møtestrukturen?", "Hvordan merket dere at flyten ble bedre?"]`
 
 export const SYSTEMPROMPT_STRUKTUR = `Du er en fagassistent for byggekonsulenter. Du får et notat på norsk med en erfaring fra et prosjekt, ofte med noen utdypende svar. Du skal trekke ut den gjenbrukbare erfaringen som et strukturert erfaringskort.
 

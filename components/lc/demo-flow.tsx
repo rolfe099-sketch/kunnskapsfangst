@@ -1,7 +1,8 @@
 'use client'
 
 import { useCallback, useRef, useState } from 'react'
-import { ArrowRight, RotateCcw, ShieldAlert } from 'lucide-react'
+import Link from 'next/link'
+import { ArrowRight, Lightbulb, RotateCcw, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DemoIntro } from '@/components/lc/demo-intro'
 import { DemoProgress } from '@/components/lc/demo-progress'
@@ -27,16 +28,25 @@ import {
   FALLBACK_SVAR_GENERISK,
   FALLBACK_SVAR_STOTTET,
   FALLBACK_SVAR_UDEKKET,
+  GENERISKE_AVKLARINGER,
   INGEN_DEKNING_PREFIX,
-  SEED_KORT,
   type Avklaring,
+  type AvklaringSpm,
   type Erfaringskort,
   type KortUtenId,
 } from '@/lib/data'
+import { SEED_KORT } from '@/lib/seed-kort'
+import { lagreGodkjentKort, leggTilKunnskapshull } from '@/lib/lager'
 
 type Steg1 = 'notat' | 'avklaring'
+type AvklaringKilde = 'eksempel' | 'generert' | 'standard'
 
 const TOM_CAPTURE: CaptureFelter = { konsulent: '', dato: '', prosjekttype: '', notat: '' }
+
+const EKSEMPEL_AVKLARINGER: AvklaringSpm[] = DEMO_AVKLARINGER.map((a) => ({
+  sporsmal: a.sporsmal,
+  eksempelSvar: a.svar,
+}))
 
 function korte(tekst: string, maks = 60) {
   const t = tekst.trim()
@@ -51,7 +61,13 @@ export function DemoFlow() {
   const [steg1, setSteg1] = useState<Steg1>('notat')
 
   const [capture, setCapture] = useState<CaptureFelter>(TOM_CAPTURE)
-  const [avklaringSvar, setAvklaringSvar] = useState<string[]>(DEMO_AVKLARINGER.map(() => ''))
+
+  const [avklaringer, setAvklaringer] = useState<AvklaringSpm[]>(EKSEMPEL_AVKLARINGER)
+  const [avklaringKilde, setAvklaringKilde] = useState<AvklaringKilde>('eksempel')
+  const [lagerSporsmal, setLagerSporsmal] = useState(false)
+  const [avklaringSvar, setAvklaringSvar] = useState<string[]>(
+    EKSEMPEL_AVKLARINGER.map(() => ''),
+  )
 
   const [strukturerer, setStrukturerer] = useState(false)
   const [strukturSteg, setStrukturSteg] = useState(0)
@@ -83,6 +99,9 @@ export function DemoFlow() {
       prosjekttype: DEMO_PROSJEKTTYPE,
       notat: DEMO_NOTAT,
     })
+    setAvklaringer(EKSEMPEL_AVKLARINGER)
+    setAvklaringKilde('eksempel')
+    setAvklaringSvar(EKSEMPEL_AVKLARINGER.map(() => ''))
     setVisIntro(false)
     setStadium(1)
     setSteg1('notat')
@@ -98,8 +117,54 @@ export function DemoFlow() {
 
   function brukAvklaringEksempel(indeks: number) {
     setAvklaringSvar((prev) =>
-      prev.map((s, i) => (i === indeks ? DEMO_AVKLARINGER[indeks].svar : s)),
+      prev.map((s, i) => (i === indeks ? avklaringer[indeks]?.eksempelSvar ?? s : s)),
     )
+  }
+
+  // Steg 1b: finn ut hva som bør utdypes. For det uendrede eksempelnotatet
+  // brukes de forhåndsskrevne spørsmålene; for egne notater genererer
+  // modellen spørsmålene — med ærlig merket standard-fallback ved feil.
+  async function gaTilAvklaring() {
+    setSteg1('avklaring')
+
+    if (capture.notat.trim() === DEMO_NOTAT) {
+      setAvklaringer(EKSEMPEL_AVKLARINGER)
+      setAvklaringKilde('eksempel')
+      setAvklaringSvar(EKSEMPEL_AVKLARINGER.map(() => ''))
+      return
+    }
+
+    setLagerSporsmal(true)
+    try {
+      const res = await fetch('/api/avklaringer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notat: capture.notat.trim() }),
+      })
+      if (!res.ok) throw new Error(String(res.status))
+      const data = await res.json()
+      const sporsmal: string[] = Array.isArray(data.sporsmal) ? data.sporsmal : []
+      if (sporsmal.length < 2) throw new Error('for få spørsmål')
+      const nye = sporsmal.map((s) => ({ sporsmal: s }))
+      setAvklaringer(nye)
+      setAvklaringKilde('generert')
+      setAvklaringSvar(nye.map(() => ''))
+    } catch {
+      setAvklaringer(GENERISKE_AVKLARINGER)
+      setAvklaringKilde('standard')
+      setAvklaringSvar(GENERISKE_AVKLARINGER.map(() => ''))
+    } finally {
+      setLagerSporsmal(false)
+    }
+  }
+
+  function gjeldendeAvklaringer(): Avklaring[] {
+    return avklaringer
+      .map((a, i) => ({
+        sporsmal: a.sporsmal,
+        svar: avklaringSvar[i]?.trim() || a.eksempelSvar || '',
+      }))
+      .filter((a) => a.svar.length > 0)
   }
 
   async function lagForslag() {
@@ -115,14 +180,11 @@ export function DemoFlow() {
     }, 700)
     const minTid = new Promise((r) => setTimeout(r, 1500))
 
-    const avklaringer: Avklaring[] = DEMO_AVKLARINGER.map((a, i) => ({
-      sporsmal: a.sporsmal,
-      svar: avklaringSvar[i]?.trim() || a.svar,
-    }))
+    const brukteAvklaringer = gjeldendeAvklaringer()
 
     const samletNotat = [
       capture.notat.trim(),
-      ...avklaringer.map((a) => `${a.sporsmal} ${a.svar}`),
+      ...brukteAvklaringer.map((a) => `${a.sporsmal} ${a.svar}`),
     ].join('\n\n')
 
     let resultat: KortUtenId
@@ -174,18 +236,16 @@ export function DemoFlow() {
 
   function godkjenn() {
     if (!forslag) return
-    const avklaringer: Avklaring[] = DEMO_AVKLARINGER.map((a, i) => ({
-      sporsmal: a.sporsmal,
-      svar: avklaringSvar[i]?.trim() || a.svar,
-    }))
     const nyttKort: Erfaringskort = {
       ...forslag,
       id: `godkjent-${Date.now()}`,
       originalNotat: capture.notat.trim() || DEMO_NOTAT,
-      avklaringer,
+      avklaringer: gjeldendeAvklaringer(),
     }
     setGodkjentKort(nyttKort)
     setKunnskapsbase([nyttKort, ...SEED_KORT])
+    // Kortet overlever økten og dukker opp i biblioteket.
+    lagreGodkjentKort(nyttKort)
     setStadium(3)
   }
 
@@ -240,6 +300,12 @@ export function DemoFlow() {
       }
     }
 
+    // Kunnskapshull-sløyfen: udekkede spørsmål logges og blir foreslåtte
+    // utdypingsspørsmål i neste ukentlige debrief.
+    if (tekst.trim().startsWith(INGEN_DEKNING_PREFIX)) {
+      leggTilKunnskapshull(sporsmal, tekst.trim().slice(INGEN_DEKNING_PREFIX.length).trim())
+    }
+
     setSvarPågår(false)
     setSvarFerdig(true)
   }
@@ -255,7 +321,10 @@ export function DemoFlow() {
     setStadium(1)
     setSteg1('notat')
     setCapture(TOM_CAPTURE)
-    setAvklaringSvar(DEMO_AVKLARINGER.map(() => ''))
+    setAvklaringer(EKSEMPEL_AVKLARINGER)
+    setAvklaringKilde('eksempel')
+    setLagerSporsmal(false)
+    setAvklaringSvar(EKSEMPEL_AVKLARINGER.map(() => ''))
     setStrukturerer(false)
     setStrukturSteg(0)
     setForslag(null)
@@ -322,11 +391,14 @@ export function DemoFlow() {
               verdier={capture}
               onEndre={endreCapture}
               onBrukEksempel={startEksempel}
-              onNeste={() => setSteg1('avklaring')}
+              onNeste={gaTilAvklaring}
             />
           ) : (
             <ClarificationQuestions
+              avklaringer={avklaringer}
               svar={avklaringSvar}
+              laster={lagerSporsmal}
+              kilde={avklaringKilde}
               onEndre={endreAvklaring}
               onBrukEksempel={brukAvklaringEksempel}
               onTilbake={() => setSteg1('notat')}
@@ -386,10 +458,7 @@ export function DemoFlow() {
                 notat={capture.notat || DEMO_NOTAT}
                 konsulent={capture.konsulent || DEMO_KONSULENT}
                 dato={capture.dato || DEMO_DATO}
-                avklaringer={DEMO_AVKLARINGER.map((a, i) => ({
-                  sporsmal: a.sporsmal,
-                  svar: avklaringSvar[i]?.trim() || a.svar,
-                }))}
+                avklaringer={gjeldendeAvklaringer()}
                 onGodkjenn={godkjenn}
                 onTilbake={tilbakeTilAvklaring}
               />
@@ -406,7 +475,8 @@ export function DemoFlow() {
               </h3>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 En kollega på et nytt prosjekt stiller et spørsmål. Svaret bygger kun på godkjent
-                kunnskap, og viser hvor det kommer fra.
+                kunnskap — ditt nye kort pluss {SEED_KORT.length} tidligere godkjente erfaringer —
+                og viser hvor det kommer fra.
               </p>
             </div>
 
@@ -442,9 +512,28 @@ export function DemoFlow() {
                     </div>
                   </div>
                 ) : visErInsufficient && svarFerdig ? (
-                  <InsufficientKnowledge
-                    detalj={svar.slice(INGEN_DEKNING_PREFIX.length).trim()}
-                  />
+                  <div className="space-y-3">
+                    <InsufficientKnowledge
+                      detalj={svar.slice(INGEN_DEKNING_PREFIX.length).trim()}
+                    />
+                    <p className="flex gap-2 rounded-lg border border-border bg-muted/40 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
+                      <Lightbulb
+                        className="mt-0.5 size-3.5 shrink-0 text-primary"
+                        aria-hidden="true"
+                      />
+                      <span>
+                        Spørsmålet er logget som et <strong>kunnskapshull</strong> og foreslås
+                        som tema i neste ukentlige debrief — slik blir hjernen smartere for
+                        hver uke.{' '}
+                        <Link
+                          href="/bibliotek?fane=hull"
+                          className="font-medium text-primary underline-offset-4 hover:underline"
+                        >
+                          Se kunnskapshullene
+                        </Link>
+                      </span>
+                    </p>
+                  </div>
                 ) : (
                   <GroundedAnswer
                     svar={svar}
@@ -463,7 +552,13 @@ export function DemoFlow() {
             ) : null}
 
             {svarFerdig ? (
-              <div className="flex justify-end border-t border-border pt-4">
+              <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border pt-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground"
+                  render={<Link href="/bibliotek">Utforsk kunnskapsbiblioteket</Link>}
+                />
                 <Button variant="outline" size="sm" onClick={nullstill}>
                   Kjør demoen på nytt
                   <ArrowRight className="size-4" aria-hidden="true" />
