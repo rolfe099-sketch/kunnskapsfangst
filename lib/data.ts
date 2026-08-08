@@ -56,8 +56,10 @@ export const DEMO_KONSULENT = 'Kari Nilsen'
 export const DEMO_DATO = '20.07.2026'
 export const DEMO_PROSJEKTTYPE = 'Boligprosjekt'
 
+// Notatet inneholder bevisst et firmanavn og et personnavn, slik at
+// maskeringssteget har noe å vise fram.
 export const DEMO_NOTAT =
-  'På et boligprosjekt fikk vi gjentatte stopp mellom tømrer og elektro i samme sone. Vi endret hvordan vi brukte morgenmøtene og fikk bedre flyt etter et par uker, men det tok litt tid før alle fulgte den nye måten å jobbe på.'
+  'På et boligprosjekt for Fjordbygg AS fikk vi gjentatte stopp mellom tømrer og elektro i samme sone. Prosjektleder Ole Martin Strand og jeg endret hvordan vi brukte morgenmøtene, og vi fikk bedre flyt etter et par uker, men det tok litt tid før alle fulgte den nye måten å jobbe på.'
 
 // Forhåndsgenererte utdypingsspørsmål for det fiktive eksempelet.
 export const DEMO_AVKLARINGER: Avklaring[] = [

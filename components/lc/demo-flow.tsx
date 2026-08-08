@@ -37,8 +37,10 @@ import {
 } from '@/lib/data'
 import { SEED_KORT } from '@/lib/seed-kort'
 import { lagreGodkjentKort, leggTilKunnskapshull } from '@/lib/lager'
+import { DataMasking } from '@/components/lc/data-masking'
+import { finnFunn, maskerTekst, type Funn } from '@/lib/maskering'
 
-type Steg1 = 'notat' | 'avklaring'
+type Steg1 = 'notat' | 'maskering' | 'avklaring'
 type AvklaringKilde = 'eksempel' | 'generert' | 'standard'
 
 const TOM_CAPTURE: CaptureFelter = { konsulent: '', dato: '', prosjekttype: '', notat: '' }
@@ -61,6 +63,9 @@ export function DemoFlow() {
   const [steg1, setSteg1] = useState<Steg1>('notat')
 
   const [capture, setCapture] = useState<CaptureFelter>(TOM_CAPTURE)
+
+  // Maskering: funn foreslås lokalt og godkjennes før noe sendes til modellen.
+  const [funn, setFunn] = useState<Funn[]>([])
 
   const [avklaringer, setAvklaringer] = useState<AvklaringSpm[]>(EKSEMPEL_AVKLARINGER)
   const [avklaringKilde, setAvklaringKilde] = useState<AvklaringKilde>('eksempel')
@@ -99,6 +104,7 @@ export function DemoFlow() {
       prosjekttype: DEMO_PROSJEKTTYPE,
       notat: DEMO_NOTAT,
     })
+    setFunn([])
     setAvklaringer(EKSEMPEL_AVKLARINGER)
     setAvklaringKilde('eksempel')
     setAvklaringSvar(EKSEMPEL_AVKLARINGER.map(() => ''))
@@ -109,6 +115,21 @@ export function DemoFlow() {
 
   function endreCapture(felter: Partial<CaptureFelter>) {
     setCapture((prev) => ({ ...prev, ...felter }))
+  }
+
+  // Det maskerte notatet er det eneste som forlater nettleseren — og det er
+  // også versjonen som lagres i kunnskapsbasen.
+  function maskertNotat(): string {
+    return maskerTekst(capture.notat.trim(), funn)
+  }
+
+  function tilMaskering() {
+    setFunn(finnFunn(capture.notat.trim()))
+    setSteg1('maskering')
+  }
+
+  function vekslefunn(id: string) {
+    setFunn((prev) => prev.map((f) => (f.id === id ? { ...f, aktiv: !f.aktiv } : f)))
   }
 
   function endreAvklaring(indeks: number, verdi: string) {
@@ -139,7 +160,7 @@ export function DemoFlow() {
       const res = await fetch('/api/avklaringer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notat: capture.notat.trim() }),
+        body: JSON.stringify({ notat: maskertNotat() }),
       })
       if (!res.ok) throw new Error(String(res.status))
       const data = await res.json()
@@ -183,7 +204,7 @@ export function DemoFlow() {
     const brukteAvklaringer = gjeldendeAvklaringer()
 
     const samletNotat = [
-      capture.notat.trim(),
+      maskertNotat(),
       ...brukteAvklaringer.map((a) => `${a.sporsmal} ${a.svar}`),
     ].join('\n\n')
 
@@ -239,7 +260,9 @@ export function DemoFlow() {
     const nyttKort: Erfaringskort = {
       ...forslag,
       id: `godkjent-${Date.now()}`,
-      originalNotat: capture.notat.trim() || DEMO_NOTAT,
+      // Kunnskapsbasen lagrer den maskerte versjonen – kundenavn hører ikke
+      // hjemme i en delt base, heller ikke i kildesporet.
+      originalNotat: maskertNotat() || DEMO_NOTAT,
       avklaringer: gjeldendeAvklaringer(),
     }
     setGodkjentKort(nyttKort)
@@ -321,6 +344,7 @@ export function DemoFlow() {
     setStadium(1)
     setSteg1('notat')
     setCapture(TOM_CAPTURE)
+    setFunn([])
     setAvklaringer(EKSEMPEL_AVKLARINGER)
     setAvklaringKilde('eksempel')
     setLagerSporsmal(false)
@@ -391,7 +415,15 @@ export function DemoFlow() {
               verdier={capture}
               onEndre={endreCapture}
               onBrukEksempel={startEksempel}
-              onNeste={gaTilAvklaring}
+              onNeste={tilMaskering}
+            />
+          ) : steg1 === 'maskering' ? (
+            <DataMasking
+              notat={capture.notat.trim()}
+              funn={funn}
+              onVeksle={vekslefunn}
+              onTilbake={() => setSteg1('notat')}
+              onFortsett={gaTilAvklaring}
             />
           ) : (
             <ClarificationQuestions
@@ -401,7 +433,7 @@ export function DemoFlow() {
               kilde={avklaringKilde}
               onEndre={endreAvklaring}
               onBrukEksempel={brukAvklaringEksempel}
-              onTilbake={() => setSteg1('notat')}
+              onTilbake={() => setSteg1('maskering')}
               onLagForslag={lagForslag}
             />
           )}
@@ -455,7 +487,7 @@ export function DemoFlow() {
               <ApprovalState
                 forslag={forslag}
                 onEndre={endreForslag}
-                notat={capture.notat || DEMO_NOTAT}
+                notat={maskertNotat() || DEMO_NOTAT}
                 konsulent={capture.konsulent || DEMO_KONSULENT}
                 dato={capture.dato || DEMO_DATO}
                 avklaringer={gjeldendeAvklaringer()}
