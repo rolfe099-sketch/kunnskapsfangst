@@ -293,7 +293,9 @@ export function DemoFlow() {
 
   // Steg 1 av svaret: finn de mest relevante kortene med likhetssøk.
   // Feiler søket, sendes hele basen i stedet – og det sies tydelig ifra.
-  async function hentKontekst(sporsmal: string): Promise<Erfaringskort[]> {
+  async function hentKontekst(
+    sporsmal: string,
+  ): Promise<{ kontekst: Erfaringskort[]; hoppetOver: boolean }> {
     setHenter(true)
     setTreff([])
     setForkastet([])
@@ -316,10 +318,10 @@ export function DemoFlow() {
         .map((t) => kunnskapsbase.find((k) => k.id === t.id))
         .filter((k): k is Erfaringskort => Boolean(k))
 
-      return valgte
+      return { kontekst: valgte, hoppetOver: false }
     } catch {
       setHentHoppetOver(true)
-      return kunnskapsbase
+      return { kontekst: kunnskapsbase, hoppetOver: true }
     } finally {
       setHenter(false)
     }
@@ -334,8 +336,22 @@ export function DemoFlow() {
     setSvarErReserve(false)
     setSvarPågår(true)
 
-    const kontekst = await hentKontekst(sporsmal)
+    const { kontekst, hoppetOver } = await hentKontekst(sporsmal)
     setKontekstKort(kontekst)
+
+    // Fant søket ingenting relevant, finnes det ikke noe å svare fra. Da
+    // spør vi ikke modellen i det hele tatt — vi vet allerede at grunnlaget
+    // mangler, og å la modellen «prøve» ville vært å invitere til gjetting.
+    if (!hoppetOver && kontekst.length === 0) {
+      setSvar(FALLBACK_SVAR_GENERISK)
+      leggTilKunnskapshull(
+        sporsmal,
+        'Ingen av de godkjente erfaringene var like nok til å brukes som grunnlag.',
+      )
+      setSvarPågår(false)
+      setSvarFerdig(true)
+      return
+    }
 
     let tekst = ''
     try {

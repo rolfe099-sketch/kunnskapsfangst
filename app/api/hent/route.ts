@@ -7,8 +7,12 @@ export const maxDuration = 30
 
 // Hvor mange kort som sendes videre som kontekst til svarmodellen.
 const TOPP_N = 4
-// Under denne likheten regnes kortet som irrelevant og tas ikke med.
-const MIN_LIKHET = 0.25
+// Absolutt bunnivå. Med text-embedding-3-small lander selv urelaterte tekster
+// ofte rundt 0.3, så en lav fast terskel slipper gjennom nesten alt.
+const MIN_LIKHET = 0.38
+// Relativ terskel: et kort må ligge nær det beste treffet for å bli med.
+// Uten denne drar middelmådige kort med seg konteksten og svaret blir vagt.
+const ANDEL_AV_BESTE = 0.85
 
 // Enkel cache per serverinstans. Kortene endrer seg sjelden, og å embedde
 // dem på nytt for hvert spørsmål er sløsing.
@@ -88,7 +92,9 @@ export async function POST(req: Request) {
       }))
       .sort((a, b) => b.skår - a.skår)
 
-    const valgte = rangert.filter((r) => r.skår >= MIN_LIKHET).slice(0, TOPP_N)
+    const beste = rangert[0]?.skår ?? 0
+    const terskel = Math.max(MIN_LIKHET, beste * ANDEL_AV_BESTE)
+    const valgte = rangert.filter((r) => r.skår >= terskel).slice(0, TOPP_N)
 
     return Response.json({
       treff: valgte,
