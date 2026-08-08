@@ -33,6 +33,12 @@ export function DemoHeader() {
             >
               Bibliotek
             </Link>
+            <Link
+              href="/om"
+              className="font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Om
+            </Link>
           </nav>
           <span className="hidden rounded-full border border-border bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground sm:inline-block">
             Kun fiktive demodata
