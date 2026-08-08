@@ -15,3 +15,9 @@
 // ---------------------------------------------------------------------------
 
 export const MODELL_ID = process.env.AI_MODELL?.trim() || 'openai/gpt-4.1-mini'
+
+// Embedding-modell for likhetssøket i /api/hent. Settes med EMBEDDING_MODELL.
+// Anthropic tilbyr ikke embeddings, så denne står uavhengig av modellvalget
+// over — et poeng i seg selv: riktig verktøy til hver oppgave.
+export const EMBEDDING_MODELL =
+  process.env.EMBEDDING_MODELL?.trim() || 'openai/text-embedding-3-small'

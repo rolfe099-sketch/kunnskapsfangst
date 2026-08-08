@@ -39,6 +39,7 @@ import { SEED_KORT } from '@/lib/seed-kort'
 import { lagreGodkjentKort, leggTilKunnskapshull } from '@/lib/lager'
 import { DataMasking } from '@/components/lc/data-masking'
 import { finnFunn, maskerTekst, type Funn } from '@/lib/maskering'
+import { RetrievalTrace, type Treff } from '@/components/lc/retrieval-trace'
 
 type Steg1 = 'notat' | 'maskering' | 'avklaring'
 type AvklaringKilde = 'eksempel' | 'generert' | 'standard'
@@ -82,6 +83,15 @@ export function DemoFlow() {
   const [kunnskapsbase, setKunnskapsbase] = useState<Erfaringskort[]>([])
 
   const [aktivtSpørsmål, setAktivtSpørsmål] = useState<string | null>(null)
+
+  // Retrieval: hvilke kort som ble hentet, og hva de scoret.
+  const [henter, setHenter] = useState(false)
+  const [treff, setTreff] = useState<Treff[]>([])
+  const [forkastet, setForkastet] = useState<Treff[]>([])
+  const [hentHoppetOver, setHentHoppetOver] = useState(false)
+  // Kortene som faktisk ble sendt til modellen – [Kort N] peker inn i denne.
+  const [kontekstKort, setKontekstKort] = useState<Erfaringskort[]>([])
+
   const [svar, setSvar] = useState('')
   const [svarPågår, setSvarPågår] = useState(false)
   const [svarFerdig, setSvarFerdig] = useState(false)
@@ -281,6 +291,40 @@ export function DemoFlow() {
     setSteg1('avklaring')
   }
 
+  // Steg 1 av svaret: finn de mest relevante kortene med likhetssøk.
+  // Feiler søket, sendes hele basen i stedet – og det sies tydelig ifra.
+  async function hentKontekst(sporsmal: string): Promise<Erfaringskort[]> {
+    setHenter(true)
+    setTreff([])
+    setForkastet([])
+    setHentHoppetOver(false)
+    try {
+      const res = await fetch('/api/hent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sporsmal, kort: kunnskapsbase }),
+      })
+      if (!res.ok) throw new Error(String(res.status))
+      const data = await res.json()
+      const funnetTreff: Treff[] = Array.isArray(data.treff) ? data.treff : []
+
+      setTreff(funnetTreff)
+      setForkastet(Array.isArray(data.forkastet) ? data.forkastet : [])
+
+      // Behold rekkefølgen fra søket – den bestemmer [Kort N]-nummereringen.
+      const valgte = funnetTreff
+        .map((t) => kunnskapsbase.find((k) => k.id === t.id))
+        .filter((k): k is Erfaringskort => Boolean(k))
+
+      return valgte
+    } catch {
+      setHentHoppetOver(true)
+      return kunnskapsbase
+    } finally {
+      setHenter(false)
+    }
+  }
+
   async function spør(sporsmal: string) {
     if (svarPågår) return
     setAktivtSpørsmål(sporsmal)
@@ -290,12 +334,15 @@ export function DemoFlow() {
     setSvarErReserve(false)
     setSvarPågår(true)
 
+    const kontekst = await hentKontekst(sporsmal)
+    setKontekstKort(kontekst)
+
     let tekst = ''
     try {
       const res = await fetch('/api/sporsmal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sporsmal, kort: kunnskapsbase }),
+        body: JSON.stringify({ sporsmal, kort: kontekst }),
       })
       if (!res.ok || !res.body) throw new Error(String(res.status))
       const reader = res.body.getReader()
@@ -355,6 +402,11 @@ export function DemoFlow() {
     setGodkjentKort(null)
     setKunnskapsbase([])
     setAktivtSpørsmål(null)
+    setHenter(false)
+    setTreff([])
+    setForkastet([])
+    setHentHoppetOver(false)
+    setKontekstKort([])
     setSvar('')
     setSvarPågår(false)
     setSvarFerdig(false)
@@ -521,6 +573,13 @@ export function DemoFlow() {
             {aktivtSpørsmål ? (
               <div className="space-y-3 border-t border-border pt-5">
                 <p className="text-sm font-medium text-foreground">{aktivtSpørsmål}</p>
+                <RetrievalTrace
+                  laster={henter}
+                  treff={treff}
+                  forkastet={forkastet}
+                  totalt={kunnskapsbase.length}
+                  hoppetOver={hentHoppetOver}
+                />
                 {svarFeil ? (
                   <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-5">
                     <div className="flex gap-3">
@@ -569,7 +628,7 @@ export function DemoFlow() {
                 ) : (
                   <GroundedAnswer
                     svar={svar}
-                    kort={kunnskapsbase}
+                    kort={kontekstKort}
                     onÅpneErfaring={setDetaljKort}
                     strømmer={svarPågår}
                   />
