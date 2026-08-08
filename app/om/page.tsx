@@ -9,6 +9,10 @@ export const metadata: Metadata = {
     'Arkitektur, modellvalg, sikkerhet og bevisste avgrensninger bak konseptdemoen for LC-hjernen. Alt innhold er fiktivt.',
 }
 
+// Siden leser aktive modellnavn fra miljøet, så den må rendres per forespørsel
+// i stedet for å fryses ved bygg.
+export const dynamic = 'force-dynamic'
+
 export default function OmPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-background">

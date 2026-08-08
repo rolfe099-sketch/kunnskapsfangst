@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { SEED_KORT } from '@/lib/seed-kort'
+import { EMBEDDING_MODELL, MODELL_ID, TRANSKRIPSJON_MODELL } from '@/lib/modell'
 
 const FLYT = [
   {
@@ -199,11 +200,29 @@ export function AboutSolution() {
             per IP.
           </p>
           <p>
-            Modellen settes med miljøvariabelen <code className="font-mono text-xs">AI_MODELL</code>,
-            slik at den kan byttes uten kodeendring. Claude er det naturlige valget her, men
-            krever betalte AI Gateway-kreditter — gratisnivået gir ikke tilgang til
-            Claude-modellene. Demoen kjører derfor på en verifisert tilgjengelig modell inntil
-            kreditter er på plass, og bytter med én miljøvariabel.
+            Modellene settes med miljøvariabler, slik at de kan byttes uten kodeendring. Ulike
+            oppgaver får ulikt verktøy — Anthropic tilbyr ikke embeddings, så søket bruker en
+            annen leverandør enn svarene. Slik ser oppsettet ut akkurat nå:
+          </p>
+          <dl className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+            {[
+              { rolle: 'Spørsmål, strukturering og svar', modell: MODELL_ID },
+              { rolle: 'Likhetssøk (embeddings)', modell: EMBEDDING_MODELL },
+              { rolle: 'Transkripsjon av lyd', modell: TRANSKRIPSJON_MODELL },
+            ].map((r) => (
+              <div
+                key={r.rolle}
+                className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5"
+              >
+                <dt className="text-sm text-muted-foreground">{r.rolle}</dt>
+                <dd className="font-mono text-xs text-foreground">{r.modell}</dd>
+              </div>
+            ))}
+          </dl>
+          <p>
+            Claude krever betalte AI Gateway-kreditter — gratisnivået gir ikke tilgang til
+            Claude-modellene, og struper dessuten forespørslene. Det er verdt å vite før man
+            demonstrerer noe for noen.
           </p>
           <p className="rounded-lg border border-border bg-muted/40 px-4 py-3">
             <strong className="font-medium text-foreground">Når noe feiler:</strong> demoen
